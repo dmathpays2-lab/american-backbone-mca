@@ -19,9 +19,11 @@ LOGS_DIR = Path("/root/.openclaw/logs")
 SESSIONS_DIR = Path("/root/.openclaw/agents/main/sessions")
 MAX_RUN_MINUTES = 8  # Kill runs approaching 10min limit
 ALERT_THRESHOLD_MINUTES = 5  # Log warning at 5min
+SCRIPT_TIMEOUT = 30  # Self-timeout to prevent hanging
 
 # Track file for persistence
 STATE_FILE = WORKSPACE / ".health_state.json"
+CIRCUIT_BREAKER_FILE = WORKSPACE / ".health_circuit_breaker"
 
 def load_state():
     """Load previous run state"""
@@ -173,36 +175,82 @@ def generate_report(runs, timeouts, gateway_ok, killed):
     return "\n".join(report)
 
 def main():
-    """Main health check routine"""
-    state = load_state()
+    """Main health check routine with circuit breaker and timeout protection"""
     
-    # Get current status
-    runs = get_running_runs()
-    timeouts = get_recent_timeouts()
-    gateway_ok = check_gateway_health()
+    # CIRCUIT BREAKER: If we failed too many times recently, back off
+    if CIRCUIT_BREAKER_FILE.exists():
+        try:
+            cb_stat = CIRCUIT_BREAKER_FILE.stat()
+            cb_age_minutes = (datetime.now() - datetime.fromtimestamp(cb_stat.st_mtime)).total_seconds() / 60
+            if cb_age_minutes < 10:  # Circuit breaker active for 10 min
+                print("⚠️  Circuit breaker active — skipping check (failed recently)")
+                sys.exit(0)
+            else:
+                CIRCUIT_BREAKER_FILE.unlink()  # Reset after cooldown
+        except:
+            pass
     
-    # Kill stuck runs
-    killed = kill_stuck_runs(runs)
+    # Set self-timeout to prevent hanging
+    def timeout_handler(signum, frame):
+        # Touch circuit breaker file
+        try:
+            CIRCUIT_BREAKER_FILE.touch()
+        except:
+            pass
+        print("⏱️  Health monitor self-timed out — this shouldn't happen")
+        sys.exit(0)
     
-    # Update state
-    if killed:
-        state["killed_runs"].extend(killed)
-        state["killed_runs"] = state["killed_runs"][-20:]  # Keep last 20
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(SCRIPT_TIMEOUT)
     
-    state["last_check"] = datetime.now().isoformat()
-    save_state(state)
-    
-    # Print report
-    report = generate_report(runs, timeouts, gateway_ok, killed)
-    print(report)
-    
-    # Exit code indicates health
-    if not gateway_ok:
-        sys.exit(2)  # Critical
-    elif long_runs := [r for r in runs if r["age_minutes"] > ALERT_THRESHOLD_MINUTES]:
-        sys.exit(1)  # Warning
-    else:
-        sys.exit(0)  # Healthy
+    try:
+        state = load_state()
+        
+        # Get current status
+        runs = get_running_runs()
+        timeouts = get_recent_timeouts()
+        gateway_ok = check_gateway_health()
+        
+        # Kill stuck runs
+        killed = kill_stuck_runs(runs)
+        
+        # Update state
+        if killed:
+            state["killed_runs"].extend(killed)
+            state["killed_runs"] = state["killed_runs"][-20:]  # Keep last 20
+        
+        state["last_check"] = datetime.now().isoformat()
+        save_state(state)
+        
+        # Print report (only if something interesting)
+        report = generate_report(runs, timeouts, gateway_ok, killed)
+        
+        # Only print full report if there's a problem or kills happened
+        if killed or not gateway_ok or any(r["age_minutes"] > ALERT_THRESHOLD_MINUTES for r in runs):
+            print(report)
+        else:
+            # Quiet success
+            print(f"🩺 Health check OK | {len(runs)} sessions | No issues")
+        
+        # Disable alarm
+        signal.alarm(0)
+        
+        # Exit code indicates health
+        if not gateway_ok:
+            sys.exit(2)  # Critical
+        elif long_runs := [r for r in runs if r["age_minutes"] > ALERT_THRESHOLD_MINUTES]:
+            sys.exit(1)  # Warning
+        else:
+            sys.exit(0)  # Healthy
+            
+    except Exception as e:
+        # Touch circuit breaker on unexpected error
+        try:
+            CIRCUIT_BREAKER_FILE.touch()
+        except:
+            pass
+        print(f"❌ Health monitor error: {e}")
+        sys.exit(0)  # Don't propagate failures
 
 if __name__ == "__main__":
     main()

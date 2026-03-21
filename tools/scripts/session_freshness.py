@@ -6,11 +6,14 @@ Keeps OpenClaw sessions lean by monitoring and suggesting rotation
 
 import json
 import os
+import sys
+import signal
 from datetime import datetime, timedelta
 from pathlib import Path
 
 SESSION_FILE = Path("/root/.openclaw/workspace/.session_freshness.json")
 TRANSCRIPT_DIR = Path("/root/.openclaw/agents/main/sessions")
+SCRIPT_TIMEOUT = 15  # Self-timeout seconds
 
 # Thresholds
 MAX_TOKENS = 80000      # Suggest rotation at 80K tokens
@@ -151,10 +154,29 @@ class SessionFreshnessManager:
         return "\n".join(report), score < 50
 
 def main():
-    manager = SessionFreshnessManager()
-    report, should_rotate = manager.generate_report()
-    print(report)
-    return 1 if should_rotate else 0
+    """Main with self-timeout protection"""
+    def timeout_handler(signum, frame):
+        print("⏱️  Freshness check timed out — skipping")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(SCRIPT_TIMEOUT)
+    
+    try:
+        manager = SessionFreshnessManager()
+        report, should_rotate = manager.generate_report()
+        
+        # Only print if needs attention
+        if should_rotate:
+            print(report)
+        else:
+            print(f"🔄 Freshness: OK (score {manager.get_health_score()}/100)")
+        
+        signal.alarm(0)
+        return 1 if should_rotate else 0
+    except Exception as e:
+        print(f"⚠️  Freshness check error: {e}")
+        return 0
 
 if __name__ == "__main__":
     exit(main())

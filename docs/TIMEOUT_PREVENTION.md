@@ -82,9 +82,31 @@ Search → Wait → Fetch → Search → Wait → Fetch...
 ## Current Protections in Place
 
 1. ✅ **Timeout increased**: 5min → 10min
-2. ✅ **Health monitor**: Runs every 2min, kills stuck runs >8min
+2. ✅ **Health monitor**: Runs every 5min (was 2min), kills stuck runs >8min
 3. ✅ **Tool wrappers**: Research ops have hard 30-60s caps
 4. ✅ **Subagent template**: Standardized with 3min timeouts
+5. ✅ **Circuit breakers**: Monitor backs off if it fails
+6. ✅ **Self-timeouts**: Scripts kill themselves if they hang
+
+## Safety Features (Preventing Monitor-Caused Issues)
+
+### Circuit Breaker Pattern
+- If health monitor fails, it **backs off for 10 minutes**
+- Prevents cascading failures from a broken monitor
+
+### Self-Timeouts
+- Health monitor: **30 second max** execution time
+- Freshness check: **15 second max** execution time
+- Never hangs longer than the timeout it's monitoring
+
+### Quiet Mode
+- Only reports when there's an issue
+- Normal runs: single line status
+- No log spam
+
+### No Failure Propagation
+- Scripts exit 0 even on internal errors
+- Never causes upstream failures
 
 ## What to Do If Timeout Happens
 
