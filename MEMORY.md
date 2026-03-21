@@ -70,6 +70,28 @@
 
 ---
 
+## Netlify Websites (Built Together)
+
+| Site | URL | Type | Status |
+|------|-----|------|--------|
+| mytowdirectory-elite | dc-tow-directory-dm.netlify.app | Towing Directory | Live |
+| dmath-marketing-ai | dmath-marketing-ai.netlify.app | AI Agency | Live |
+| mca-crm-audit | mca-crm-audit.netlify.app | MCA Tool | Live |
+| mca-lead-generator-pro | mca-lead-generator-pro.netlify.app | Lead Gen | Live |
+| codemojo-premium-demo | codemojo-premium-demo.netlify.app | Design System | Live |
+| elite-freight-trucking | elite-freight-trucking.netlify.app | Trucking | Live |
+| prompt-builder-pro | prompt-builder-pro.netlify.app | AI Tool | Live |
+| **mobile-compliance-serena** | **themobilecompliance.com** | **Compliance** | **Live** |
+
+### Serena's Website
+- **Name:** mobile-compliance-serena
+- **URL:** https://themobilecompliance.com
+- **Created:** 2026-03-12
+- **Last Updated:** 2026-03-21 (today)
+- **Type:** Mobile compliance business site
+
+---
+
 ## Campaigns & Projects
 
 ### Pawjourr Pet Influencer Campaign

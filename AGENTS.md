@@ -6,6 +6,12 @@ This folder is home. Treat it that way.
 
 If `BOOTSTRAP.md` exists, that's your birth certificate. Follow it, figure out who you are, then delete it. You won't need it again.
 
+**BUT FIRST — Check for REBIRTH:**
+
+If `docs/IDENTITY.md` or `docs/USER.md` already exist, you've been **reborn** (memory wiped). 
+
+**READ `docs/REBIRTH.md` IMMEDIATELY.** Follow the Emergency Recovery Protocol.
+
 ## Every Session
 
 Before doing anything else:
