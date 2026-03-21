@@ -1,0 +1,15 @@
+══════════════════════════════════════════════════
+🩺 OPENCLAW HEALTH REPORT
+📅 2026-03-22 01:51:28
+══════════════════════════════════════════════════
+
+🌐 Gateway: ✅ RUNNING
+
+📊 Active Sessions: 1
+
+🚨 RECENT TIMEOUTS IN LOGS:
+   {"0":"{\"subsystem\":\"gateway\"}","1":"[kimi-bridge] [im] runtime dispatch comp...
+   {"0":"{\"subsystem\":\"gateway\"}","1":"[kimi-bridge] [im] runtime dispatching r...
+   {"0":"{\"subsystem\":\"gateway\"}","1":"[kimi-bridge] [im] runtime dispatch star...
+
+══════════════════════════════════════════════════
